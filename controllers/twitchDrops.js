@@ -6,9 +6,11 @@ const COOLDOWN = parseInt(process.env.DROP_COOLDOWN_SECONDS || "10", 10);
 export const collectTwitchDrops = async (req, res) => {
   try {
     if (!req.session || !req.session.steamUser || !req.session.twitchUser) {
-      return res
-        .status(401)
-        .json({ success: false, message: "You are not logged in!" });
+      return res.status(401).json({
+        success: false,
+        message:
+          "You are not logged in or your session has expired. Please log in again to continue!",
+      });
     }
 
     const steamId = req.session.steamUser.steamid;
@@ -53,7 +55,8 @@ export const collectTwitchDrops = async (req, res) => {
 
     return res.json({
       success: true,
-      message: "Your Twitch reward has been found!",
+      message:
+        "Your Twitch reward has been found and will be delivered to your in-game account within 5 minutes!",
       currentDrops: validDrops,
     });
   } catch (err) {
