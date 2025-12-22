@@ -126,16 +126,13 @@ export const fulfillTwitchDrops = async (req, res) => {
 
       if (entitlementIds.length > 0) {
         try {
-          await axios.post(
+          await axios.patch(
             "https://api.twitch.tv/helix/entitlements/drops",
             {
               entitlement_ids: entitlementIds,
               fulfillment_status: "FULFILLED",
             },
             {
-              params: {
-                broadcaster_id: TWITCH_BROADCASTER_ID,
-              },
               headers: {
                 "Client-ID": TWITCH_CLIENT_ID,
                 Authorization: `Bearer ${appToken}`,
