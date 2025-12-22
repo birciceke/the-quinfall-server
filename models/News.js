@@ -12,7 +12,7 @@ const newsSchema = new Schema(
     content: {
       type: String,
       required: true,
-      minLength: 3,
+      minLength: 12,
     },
     imageUrl: {
       type: String,
