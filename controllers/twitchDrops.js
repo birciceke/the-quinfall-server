@@ -145,7 +145,7 @@ export const fulfillTwitchDrops = async (req, res) => {
           );
         } catch (err) {
           console.error(
-            "Twitch fulfillment failed for user:",
+            "Twitch fulfillment failed for user: ",
             user.twitchId,
             err?.response?.data || err.message
           );

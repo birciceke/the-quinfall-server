@@ -24,7 +24,9 @@ export const getTwitchAppToken = async () => {
   appAccessToken = response.data.access_token;
   expiresAt = Date.now() + response.data.expires_in * 1000;
 
-  console.log("Twitch App Access Token başarıyla alındı!");
+  console.log(
+    `Twitch uygulama erişim jetonu başarıyla alındı: ${appAccessToken}`
+  );
 
   return appAccessToken;
 };
