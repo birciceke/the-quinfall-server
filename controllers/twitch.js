@@ -73,12 +73,7 @@ export const handleTwitchCallback = async (req, res) => {
 
     const dropsData = dropsResponse.data.data || [];
 
-    const dropIds = dropsData.map((d) => ({
-      entitlementId: d.id,
-      benefitId: d.benefit_id,
-    }));
-
-    console.log(dropsData);
+    const dropIds = dropsData.map((d) => d.benefit_id).filter(Boolean);
 
     const steamUser = req.session.steamUser;
 
