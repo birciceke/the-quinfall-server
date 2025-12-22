@@ -105,7 +105,7 @@ export const handleTwitchCallback = async (req, res) => {
       redirectParams.set("avatar", steamUser.avatarmedium);
     }
 
-    res.redirect(`${CLIENT_URL}/drops?${redirectParams.toString()}`);
+    res.redirect(`${CLIENT_URL}/twitch-drops?${redirectParams.toString()}`);
   } catch (err) {
     console.error("Twitch callback error:", err);
     const steamUser = req.session.steamUser;
