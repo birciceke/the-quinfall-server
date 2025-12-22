@@ -8,6 +8,7 @@ import TwitchDropsList from "../models/TwitchDropsList.js";
 import { getTwitchAppToken } from "../utils/twitchAppToken.js";
 
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
+const TWITCH_BROADCASTER_ID = process.env.TWITCH_BROADCASTER_ID;
 const COOLDOWN = parseInt(process.env.DROP_COOLDOWN_SECONDS || "10", 10);
 
 export const collectTwitchDrops = async (req, res) => {
@@ -132,6 +133,9 @@ export const fulfillTwitchDrops = async (req, res) => {
               fulfillment_status: "FULFILLED",
             },
             {
+              params: {
+                broadcaster_id: TWITCH_BROADCASTER_ID,
+              },
               headers: {
                 "Client-ID": TWITCH_CLIENT_ID,
                 Authorization: `Bearer ${appToken}`,
