@@ -124,13 +124,15 @@ export const fulfillTwitchDrops = async (req, res) => {
         .map((d) => d.entitlementId)
         .filter(Boolean);
 
+      let fulfilled = false;
+
       if (entitlementIds.length > 0) {
         try {
           await axios.patch(
             "https://api.twitch.tv/helix/entitlements/drops",
             {
               entitlement_ids: entitlementIds,
-              fulfillment_status: "CLAIMED",
+              fulfillment_status: "FULFILLED",
             },
             {
               headers: {
@@ -140,6 +142,8 @@ export const fulfillTwitchDrops = async (req, res) => {
               },
             }
           );
+
+          fulfilled = true;
         } catch (err) {
           console.error(
             "Twitch fulfillment failed for user: ",
@@ -149,10 +153,15 @@ export const fulfillTwitchDrops = async (req, res) => {
         }
       }
 
-      user.drops = [];
-      user[serverField] = 0;
+      if (fulfilled) {
+        response[user.steamId] = {
+          drops: user.drops.map((d) => d.benefitId).join(","),
+        };
 
-      await user.save();
+        user.drops = [];
+        user[serverField] = 0;
+        await user.save();
+      }
     }
 
     return res.json(response);
