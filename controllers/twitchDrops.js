@@ -1,10 +1,13 @@
 import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
 
 import TwitchDropsUsers from "../models/TwitchDropsUsers.js";
 import TwitchDropsList from "../models/TwitchDropsList.js";
 
 import { getTwitchAppToken } from "../utils/twitchAppToken.js";
 
+const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const COOLDOWN = parseInt(process.env.DROP_COOLDOWN_SECONDS || "10", 10);
 
 export const collectTwitchDrops = async (req, res) => {
@@ -130,7 +133,7 @@ export const fulfillTwitchDrops = async (req, res) => {
             },
             {
               headers: {
-                "Client-ID": process.env.TWITCH_CLIENT_ID,
+                "Client-ID": TWITCH_CLIENT_ID,
                 Authorization: `Bearer ${appToken}`,
                 "Content-Type": "application/json",
               },
