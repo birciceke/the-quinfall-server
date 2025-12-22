@@ -130,5 +130,5 @@ export const handleTwitchLogout = (req, res) => {
   }
 
   redirectParams.set("twitchLinked", false);
-  res.redirect(`${CLIENT_URL}/drops?${redirectParams.toString()}`);
+  res.redirect(`${CLIENT_URL}/twitch-drops?${redirectParams.toString()}`);
 };
