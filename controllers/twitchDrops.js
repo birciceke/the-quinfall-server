@@ -130,7 +130,7 @@ export const fulfillTwitchDrops = async (req, res) => {
             "https://api.twitch.tv/helix/entitlements/drops",
             {
               entitlement_ids: entitlementIds,
-              fulfillment_status: "FULFILLED",
+              fulfillment_status: "CLAIMED",
             },
             {
               headers: {
