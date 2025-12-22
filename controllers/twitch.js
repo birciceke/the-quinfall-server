@@ -113,7 +113,7 @@ export const handleTwitchCallback = async (req, res) => {
     if (steamUser) {
       fallbackParams = `?steamId=${steamUser.steamid}&username=${steamUser.personaname}&avatar=${steamUser.avatarmedium}&twitchLinked=false`;
     }
-    res.redirect(`${CLIENT_URL}/drops${fallbackParams}`);
+    res.redirect(`${CLIENT_URL}/twitch-drops${fallbackParams}`);
   }
 };
 
