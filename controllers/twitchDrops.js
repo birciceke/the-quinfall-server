@@ -1,14 +1,6 @@
-import axios from "axios";
-import dotenv from "dotenv";
-dotenv.config();
-
 import TwitchDropsUsers from "../models/TwitchDropsUsers.js";
 import TwitchDropsList from "../models/TwitchDropsList.js";
 
-import { getTwitchAppToken } from "../utils/twitchAppToken.js";
-
-const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
-const TWITCH_BROADCASTER_ID = process.env.TWITCH_BROADCASTER_ID;
 const COOLDOWN = parseInt(process.env.DROP_COOLDOWN_SECONDS || "10", 10);
 
 export const collectTwitchDrops = async (req, res) => {
@@ -77,8 +69,6 @@ export const fulfillTwitchDrops = async (req, res) => {
   try {
     const { token, server } = req.query;
 
-    const appToken = await getTwitchAppToken();
-
     console.log("INCOMING:", req.query);
 
     if (!token || token !== process.env.UNITY_API_KEY) {
@@ -117,51 +107,13 @@ export const fulfillTwitchDrops = async (req, res) => {
 
     for (const user of users) {
       response[user.steamId] = {
-        drops: user.drops.map((d) => d.benefitId || d).join(","),
+        drops: user.drops.join(","),
       };
 
-      const entitlementIds = user.drops
-        .map((d) => d.entitlementId)
-        .filter(Boolean);
+      user.drops = [];
+      user[serverField] = 0;
 
-      let fulfilled = false;
-
-      if (entitlementIds.length > 0) {
-        try {
-          await axios.patch(
-            "https://api.twitch.tv/helix/entitlements/drops",
-            {
-              entitlement_ids: entitlementIds,
-              fulfillment_status: "FULFILLED",
-            },
-            {
-              headers: {
-                "Client-ID": TWITCH_CLIENT_ID,
-                Authorization: `Bearer ${appToken}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          fulfilled = true;
-        } catch (err) {
-          console.error(
-            "Twitch fulfillment failed for user: ",
-            user.twitchId,
-            err?.response?.data || err.message
-          );
-        }
-      }
-
-      if (fulfilled) {
-        response[user.steamId] = {
-          drops: user.drops.map((d) => d.benefitId).join(","),
-        };
-
-        user.drops = [];
-        user[serverField] = 0;
-        await user.save();
-      }
+      await user.save();
     }
 
     return res.json(response);
