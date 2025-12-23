@@ -30,26 +30,24 @@ export const handleTwitchCallback = async (req, res) => {
     const { code, state } = req.query;
 
     if (state !== "twitch_state_security_token") {
-      return res.redirect(`${CLIENT_URL}/drops?error=StateMismatch`);
+      return res.redirect(`${CLIENT_URL}/twitch-drops?error=StateMismatch`);
     }
 
-    const tokenUrl = "https://id.twitch.tv/oauth2/token";
-    const tokenData = new URLSearchParams({
-      client_id: TWITCH_CLIENT_ID,
-      client_secret: TWITCH_CLIENT_SECRET,
-      code: code,
-      grant_type: "authorization_code",
-      redirect_uri: TWITCH_SERVER_CALLBACK_URI,
-    });
-
-    const tokenResponse = await axios.post(tokenUrl, tokenData.toString(), {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
+    const tokenResponse = await axios.post(
+      "https://id.twitch.tv/oauth2/token",
+      new URLSearchParams({
+        client_id: TWITCH_CLIENT_ID,
+        client_secret: TWITCH_CLIENT_SECRET,
+        code,
+        grant_type: "authorization_code",
+        redirect_uri: TWITCH_SERVER_CALLBACK_URI,
+      }).toString(),
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
 
     const { access_token } = tokenResponse.data;
 
-    const userUrl = "https://api.twitch.tv/helix/users";
-    const userResponse = await axios.get(userUrl, {
+    const userResponse = await axios.get("https://api.twitch.tv/helix/users", {
       headers: {
         "Client-ID": TWITCH_CLIENT_ID,
         Authorization: `Bearer ${access_token}`,
@@ -59,33 +57,26 @@ export const handleTwitchCallback = async (req, res) => {
     const twitchUser = userResponse.data.data[0];
     req.session.twitchUser = twitchUser;
 
-    const dropsUrl = "https://api.twitch.tv/helix/entitlements/drops";
-    const dropsResponse = await axios.get(dropsUrl, {
-      headers: {
-        "Client-ID": TWITCH_CLIENT_ID,
-        Authorization: `Bearer ${access_token}`,
-      },
-      params: {
-        user_id: twitchUser.id,
-        first: 50,
-      },
-    });
+    const dropsResponse = await axios.get(
+      "https://api.twitch.tv/helix/entitlements/drops",
+      {
+        headers: {
+          "Client-ID": TWITCH_CLIENT_ID,
+          Authorization: `Bearer ${access_token}`,
+        },
+        params: {
+          user_id: twitchUser.id,
+          first: 50,
+        },
+      }
+    );
 
     const dropsData = dropsResponse.data.data || [];
-    const uniqueDropsMap = new Map();
 
-    for (const d of dropsData) {
-      if (!uniqueDropsMap.has(d.benefit_id)) {
-        uniqueDropsMap.set(d.benefit_id, {
-          entitlementId: d.id,
-          benefitId: d.benefit_id,
-        });
-      }
-    }
-
-    const dropIds = Array.from(uniqueDropsMap.values());
-
-    console.log(dropsData);
+    const dropIds = dropsData.map((d) => ({
+      entitlementId: d.id,
+      benefitId: d.benefit_id,
+    }));
 
     const steamUser = req.session.steamUser;
 
@@ -103,9 +94,10 @@ export const handleTwitchCallback = async (req, res) => {
     );
 
     const redirectParams = new URLSearchParams();
-    redirectParams.set("twitchLinked", true);
+    redirectParams.set("twitchLinked", "true");
     redirectParams.set("twitchUsername", twitchUser.display_name);
     redirectParams.set("twitchId", twitchUser.id);
+
     if (steamUser) {
       redirectParams.set("steamId", steamUser.steamid);
       redirectParams.set("username", steamUser.personaname);
@@ -114,13 +106,12 @@ export const handleTwitchCallback = async (req, res) => {
 
     res.redirect(`${CLIENT_URL}/twitch-drops?${redirectParams.toString()}`);
   } catch (err) {
-    console.error("Twitch callback error:", err);
     const steamUser = req.session.steamUser;
-    let fallbackParams = "";
+    let fallback = "";
     if (steamUser) {
-      fallbackParams = `?steamId=${steamUser.steamid}&username=${steamUser.personaname}&avatar=${steamUser.avatarmedium}&twitchLinked=false`;
+      fallback = `?steamId=${steamUser.steamid}&username=${steamUser.personaname}&avatar=${steamUser.avatarmedium}&twitchLinked=false`;
     }
-    res.redirect(`${CLIENT_URL}/twitch-drops${fallbackParams}`);
+    res.redirect(`${CLIENT_URL}/twitch-drops${fallback}`);
   }
 };
 

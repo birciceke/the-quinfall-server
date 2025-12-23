@@ -73,8 +73,8 @@ export const fulfillTwitchDrops = async (req, res) => {
   try {
     const { token, server } = req.query;
 
-    if (token !== process.env.UNITY_API_KEY) {
-      return res.send("odulyok");
+    if (!token || token !== process.env.UNITY_API_KEY) {
+      return res.status(403).send("odulyok");
     }
 
     const serverField =
@@ -110,7 +110,7 @@ export const fulfillTwitchDrops = async (req, res) => {
       if (!entitlementIds.length) continue;
 
       try {
-        await axios.patch(
+        const fulfillRes = await axios.patch(
           "https://api.twitch.tv/helix/entitlements/drops",
           {
             entitlement_ids: entitlementIds,
@@ -125,6 +125,10 @@ export const fulfillTwitchDrops = async (req, res) => {
           }
         );
 
+        if (!fulfillRes.data || !fulfillRes.data.data?.length) {
+          throw new Error("Fulfillment failed");
+        }
+
         response[user.steamId] = {
           drops: [...new Set(user.drops.map((d) => d.benefitId))].join(","),
         };
@@ -133,19 +137,14 @@ export const fulfillTwitchDrops = async (req, res) => {
         user.drops = [];
         await user.save();
       } catch (err) {
-        console.error(
-          "Twitch fulfillment error:",
-          user.twitchId,
-          err?.response?.data || err.message
-        );
+        console.error("Twitch fulfillment error:", user.twitchId);
       }
     }
 
     return Object.keys(response).length
       ? res.json(response)
       : res.send("odulyok");
-  } catch (err) {
-    console.error("fulfillTwitchDrops fatal:", err);
+  } catch {
     return res.send("odulyok");
   }
 };
