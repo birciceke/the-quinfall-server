@@ -75,6 +75,8 @@ export const handleTwitchCallback = async (req, res) => {
 
     const dropIds = dropsData.map((d) => d.benefit_id).filter(Boolean);
 
+    console.log(dropsData);
+
     const steamUser = req.session.steamUser;
 
     await TwitchDropsUsers.findOneAndUpdate(
