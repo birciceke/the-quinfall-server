@@ -3,6 +3,8 @@ import TwitchDropsList from "../models/TwitchDropsList.js";
 
 const COOLDOWN = parseInt(process.env.DROP_COOLDOWN_SECONDS || "10", 10);
 
+import { getTwitchAppToken } from "../utils/twitchAppToken.js";
+
 export const collectTwitchDrops = async (req, res) => {
   try {
     if (!req.session || !req.session.steamUser || !req.session.twitchUser) {
