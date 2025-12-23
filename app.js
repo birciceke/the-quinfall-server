@@ -57,6 +57,19 @@ app.use(cors(corsConfig));
 app.use(rateLimit(limiter));
 app.use(session(sessionConfig));
 
+app.use((req, res, next) => {
+  console.log("----- INCOMING REQUEST -----");
+  console.log("TIME:", new Date().toISOString());
+  console.log("METHOD:", req.method);
+  console.log("URL:", req.originalUrl);
+  console.log("IP:", req.ip);
+  console.log("HEADERS:", req.headers);
+  console.log("QUERY:", req.query);
+  console.log("BODY:", req.body);
+  console.log("----------------------------");
+  next();
+});
+
 // Routes
 app.use("/api/", subscriptionRoutes);
 app.use("/api/", newsRoutes);
