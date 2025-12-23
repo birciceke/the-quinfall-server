@@ -33,21 +33,23 @@ export const handleTwitchCallback = async (req, res) => {
       return res.redirect(`${CLIENT_URL}/twitch-drops?error=StateMismatch`);
     }
 
-    const tokenResponse = await axios.post(
-      "https://id.twitch.tv/oauth2/token",
-      new URLSearchParams({
-        client_id: TWITCH_CLIENT_ID,
-        client_secret: TWITCH_CLIENT_SECRET,
-        code,
-        grant_type: "authorization_code",
-        redirect_uri: TWITCH_SERVER_CALLBACK_URI,
-      }).toString(),
-      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
-    );
+    const tokenUrl = "https://id.twitch.tv/oauth2/token";
+    const tokenData = new URLSearchParams({
+      client_id: TWITCH_CLIENT_ID,
+      client_secret: TWITCH_CLIENT_SECRET,
+      code: code,
+      grant_type: "authorization_code",
+      redirect_uri: TWITCH_SERVER_CALLBACK_URI,
+    });
+
+    const tokenResponse = await axios.post(tokenUrl, tokenData.toString(), {
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
 
     const { access_token } = tokenResponse.data;
 
-    const userResponse = await axios.get("https://api.twitch.tv/helix/users", {
+    const userUrl = "https://api.twitch.tv/helix/users";
+    const userResponse = await axios.get(userUrl, {
       headers: {
         "Client-ID": TWITCH_CLIENT_ID,
         Authorization: `Bearer ${access_token}`,
@@ -57,26 +59,21 @@ export const handleTwitchCallback = async (req, res) => {
     const twitchUser = userResponse.data.data[0];
     req.session.twitchUser = twitchUser;
 
-    const dropsResponse = await axios.get(
-      "https://api.twitch.tv/helix/entitlements/drops",
-      {
-        headers: {
-          "Client-ID": TWITCH_CLIENT_ID,
-          Authorization: `Bearer ${access_token}`,
-        },
-        params: {
-          user_id: twitchUser.id,
-          first: 50,
-        },
-      }
-    );
+    const dropsUrl = "https://api.twitch.tv/helix/entitlements/drops";
+    const dropsResponse = await axios.get(dropsUrl, {
+      headers: {
+        "Client-ID": TWITCH_CLIENT_ID,
+        Authorization: `Bearer ${access_token}`,
+      },
+      params: {
+        user_id: twitchUser.id,
+        first: 50,
+      },
+    });
 
     const dropsData = dropsResponse.data.data || [];
 
-    const dropIds = dropsData.map((d) => ({
-      entitlementId: d.id,
-      benefitId: d.benefit_id,
-    }));
+    const dropIds = dropsData.map((d) => d.benefit_id).filter(Boolean);
 
     const steamUser = req.session.steamUser;
 
@@ -94,10 +91,9 @@ export const handleTwitchCallback = async (req, res) => {
     );
 
     const redirectParams = new URLSearchParams();
-    redirectParams.set("twitchLinked", "true");
+    redirectParams.set("twitchLinked", true);
     redirectParams.set("twitchUsername", twitchUser.display_name);
     redirectParams.set("twitchId", twitchUser.id);
-
     if (steamUser) {
       redirectParams.set("steamId", steamUser.steamid);
       redirectParams.set("username", steamUser.personaname);
@@ -106,12 +102,13 @@ export const handleTwitchCallback = async (req, res) => {
 
     res.redirect(`${CLIENT_URL}/twitch-drops?${redirectParams.toString()}`);
   } catch (err) {
+    console.error("Twitch callback error:", err);
     const steamUser = req.session.steamUser;
-    let fallback = "";
+    let fallbackParams = "";
     if (steamUser) {
-      fallback = `?steamId=${steamUser.steamid}&username=${steamUser.personaname}&avatar=${steamUser.avatarmedium}&twitchLinked=false`;
+      fallbackParams = `?steamId=${steamUser.steamid}&username=${steamUser.personaname}&avatar=${steamUser.avatarmedium}&twitchLinked=false`;
     }
-    res.redirect(`${CLIENT_URL}/twitch-drops${fallback}`);
+    res.redirect(`${CLIENT_URL}/twitch-drops${fallbackParams}`);
   }
 };
 
