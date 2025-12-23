@@ -126,7 +126,7 @@ export const fulfillTwitchDrops = async (req, res) => {
         );
 
         response[user.steamId] = {
-          drops: user.drops.map((d) => d.benefitId).join(","),
+          drops: [...new Set(user.drops.map((d) => d.benefitId))].join(","),
         };
 
         user[serverField] = 0;

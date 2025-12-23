@@ -72,14 +72,20 @@ export const handleTwitchCallback = async (req, res) => {
     });
 
     const dropsData = dropsResponse.data.data || [];
+    const uniqueDropsMap = new Map();
 
-    const dropIds = dropsData.map((d) => ({
-      entitlementId: d.id,
-      benefitId: d.benefit_id,
-    }));
+    for (const d of dropsData) {
+      if (!uniqueDropsMap.has(d.benefit_id)) {
+        uniqueDropsMap.set(d.benefit_id, {
+          entitlementId: d.id,
+          benefitId: d.benefit_id,
+        });
+      }
+    }
+
+    const dropIds = Array.from(uniqueDropsMap.values());
 
     console.log(dropsData);
-    console.log(dropIds);
 
     const steamUser = req.session.steamUser;
 
