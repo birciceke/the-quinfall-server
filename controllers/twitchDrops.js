@@ -77,12 +77,6 @@ export const fulfillTwitchDrops = async (req, res) => {
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
 
-  console.log(
-    "FULFILLED:",
-    user.twitchId,
-    fulfillRes.data.data.map((d) => d.id)
-  );
-
   try {
     const { token, server } = req.query;
 
@@ -136,6 +130,12 @@ export const fulfillTwitchDrops = async (req, res) => {
               "Content-Type": "application/json",
             },
           }
+        );
+
+        console.log(
+          "FULFILLED:",
+          user.twitchId,
+          fulfillRes.data.data.map((d) => d.id)
         );
 
         if (!fulfillRes.data || !fulfillRes.data.data?.length) {
