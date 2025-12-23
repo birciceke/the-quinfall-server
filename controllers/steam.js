@@ -92,13 +92,13 @@ export const handleSteamReturn = async (req, res) => {
 
     const redirectBase = CLIENT_URL;
 
-    res.redirect(`${redirectBase}/drops?${redirectParams.toString()}`);
+    res.redirect(`${redirectBase}/twitch-drops?${redirectParams.toString()}`);
   } catch (err) {
     console.error(
       "Steam oturum hatası detay:",
       err.response?.data || err.message
     );
-    res.redirect(`${CLIENT_URL}/drops`);
+    res.redirect(`${CLIENT_URL}/twitch-drops`);
   }
 };
 
@@ -109,6 +109,6 @@ export const handleSteamLogout = (req, res) => {
     }
 
     const redirectBase = CLIENT_URL;
-    res.redirect(`${redirectBase}/drops`);
+    res.redirect(`${redirectBase}/twitch-drops`);
   });
 };
