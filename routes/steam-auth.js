@@ -4,7 +4,7 @@ import {
   redirectToSteam,
   handleSteamReturn,
   handleSteamLogout,
-} from "../controllers/steam.js";
+} from "../controllers/steam-auth.js";
 
 const router = express.Router();
 
