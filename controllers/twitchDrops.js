@@ -69,24 +69,16 @@ export const fulfillTwitchDrops = async (req, res) => {
   try {
     const { token, server } = req.query;
 
-    console.log("INCOMING:", req.query);
-
-    if (!token || token !== process.env.UNITY_API_KEY) {
-      return res.status(403).send("odulyok");
+    if (token !== process.env.UNITY_API_KEY) {
+      return res.send("odulyok");
     }
-
-    if (!server) {
-      return res.status(400).send("odulyok");
-    }
-
-    let serverNormalized = (server || "").trim().toUpperCase();
 
     const serverField =
-      serverNormalized === "EU"
+      server === "EU"
         ? "serverEU"
-        : serverNormalized === "NA"
+        : server === "NA"
         ? "serverNA"
-        : serverNormalized === "ASIA"
+        : server === "ASIA"
         ? "serverASIA"
         : null;
 
@@ -96,29 +88,60 @@ export const fulfillTwitchDrops = async (req, res) => {
 
     const users = await TwitchDropsUsers.find({
       [serverField]: 1,
-      drops: { $exists: true, $ne: [] },
+      "drops.0": { $exists: true },
     });
 
-    if (!users || users.length === 0) {
+    if (!users.length) {
       return res.send("odulyok");
     }
 
+    const appToken = await getTwitchAppToken();
     const response = {};
 
     for (const user of users) {
-      response[user.steamId] = {
-        drops: user.drops.join(","),
-      };
+      const entitlementIds = user.drops
+        .map((d) => d.entitlementId)
+        .filter(Boolean);
 
-      user.drops = [];
-      user[serverField] = 0;
+      if (!entitlementIds.length) continue;
 
-      await user.save();
+      try {
+        await axios.patch(
+          "https://api.twitch.tv/helix/entitlements/drops",
+          {
+            entitlement_ids: entitlementIds,
+            fulfillment_status: "FULFILLED",
+          },
+          {
+            headers: {
+              "Client-ID": process.env.TWITCH_CLIENT_ID,
+              Authorization: `Bearer ${appToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        response[user.steamId] = {
+          drops: user.drops.map((d) => d.benefitId).join(","),
+        };
+
+        user[serverField] = 0;
+        user.drops = [];
+        await user.save();
+      } catch (err) {
+        console.error(
+          "Twitch fulfillment error:",
+          user.twitchId,
+          err?.response?.data || err.message
+        );
+      }
     }
 
-    return res.json(response);
+    return Object.keys(response).length
+      ? res.json(response)
+      : res.send("odulyok");
   } catch (err) {
-    console.error("fulfillTwitchDrops error:", err);
+    console.error("fulfillTwitchDrops fatal:", err);
     return res.send("odulyok");
   }
 };

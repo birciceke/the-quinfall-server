@@ -73,10 +73,12 @@ export const handleTwitchCallback = async (req, res) => {
 
     const dropsData = dropsResponse.data.data || [];
 
+    const dropIds = dropsData.map((d) => ({
+      entitlementId: d.id,
+      benefitId: d.benefit_id,
+    }));
+
     console.log(dropsData);
-
-    const dropIds = dropsData.map((d) => d.benefit_id).filter(Boolean);
-
     console.log(dropIds);
 
     const steamUser = req.session.steamUser;
@@ -104,7 +106,7 @@ export const handleTwitchCallback = async (req, res) => {
       redirectParams.set("avatar", steamUser.avatarmedium);
     }
 
-    res.redirect(`${CLIENT_URL}/drops?${redirectParams.toString()}`);
+    res.redirect(`${CLIENT_URL}/twitch-drops?${redirectParams.toString()}`);
   } catch (err) {
     console.error("Twitch callback error:", err);
     const steamUser = req.session.steamUser;
@@ -112,7 +114,7 @@ export const handleTwitchCallback = async (req, res) => {
     if (steamUser) {
       fallbackParams = `?steamId=${steamUser.steamid}&username=${steamUser.personaname}&avatar=${steamUser.avatarmedium}&twitchLinked=false`;
     }
-    res.redirect(`${CLIENT_URL}/drops${fallbackParams}`);
+    res.redirect(`${CLIENT_URL}/twitch-drops${fallbackParams}`);
   }
 };
 
@@ -129,5 +131,5 @@ export const handleTwitchLogout = (req, res) => {
   }
 
   redirectParams.set("twitchLinked", false);
-  res.redirect(`${CLIENT_URL}/drops?${redirectParams.toString()}`);
+  res.redirect(`${CLIENT_URL}/twitch-drops?${redirectParams.toString()}`);
 };
