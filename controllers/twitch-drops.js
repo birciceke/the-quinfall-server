@@ -75,6 +75,11 @@ export const fulfillTwitchDrops = async (req, res) => {
   try {
     const { token, server } = req.query;
 
+    console.log(
+      "A new query has been received with the following parameters: ",
+      req.query
+    );
+
     if (!token || token !== process.env.UNITY_API_KEY) {
       return res.status(403).send("odulyok");
     }
