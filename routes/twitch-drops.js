@@ -2,7 +2,7 @@ import express from "express";
 import {
   collectTwitchDrops,
   fulfillTwitchDrops,
-} from "../controllers/twitchDrops.js";
+} from "../controllers/twitch-drops.js";
 
 const router = express.Router();
 

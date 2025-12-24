@@ -1,52 +1,55 @@
-import TwitchDropsUsers from "../models/TwitchDropsUsers.js";
-import TwitchDropsList from "../models/TwitchDropsList.js";
+import TwitchDropsUser from "../models/twitch-drops-user.js";
+import { TwitchDropsList } from "../models/twitch-drops-list.js";
 
-const COOLDOWN = parseInt(process.env.DROP_COOLDOWN_SECONDS || "10", 10);
+const DROP_COOLDOWN_SECONDS = parseInt(
+  process.env.DROP_COOLDOWN_SECONDS || "10",
+  10
+);
 
 export const collectTwitchDrops = async (req, res) => {
   try {
-    if (!req.session || !req.session.steamUser || !req.session.twitchUser) {
+    if (!req.session?.steamUser || !req.session?.twitchUser) {
       return res.status(401).json({
         success: false,
         message:
-          "You are not logged in or your session has expired. Please log in again to continue!",
+          "You are not authenticated or your session has expired! Please log in again to continue.",
       });
     }
 
     const steamId = req.session.steamUser.steamid;
     const twitchId = req.session.twitchUser.id;
 
-    if (!req.session.dropCooldown) {
-      req.session.dropCooldown = Date.now() + COOLDOWN * 1000;
-    } else if (Date.now() < req.session.dropCooldown) {
+    const now = Date.now();
+
+    if (req.session.dropCooldown && now < req.session.dropCooldown) {
       return res.status(429).json({
         success: false,
-        message:
-          "You have made too many requests! Please wait a moment and try again.",
+        message: "Too many requests! Please wait a moment before trying again.",
       });
-    } else {
-      req.session.dropCooldown = Date.now() + COOLDOWN * 1000;
     }
 
-    let user = await TwitchDropsUsers.findOne({ steamId, twitchId });
-    if (!user || !user.drops || user.drops.length === 0) {
+    req.session.dropCooldown = now + DROP_COOLDOWN_SECONDS * 1000;
+
+    const user = await TwitchDropsUser.findOne({ steamId, twitchId });
+
+    if (!user?.drops?.length) {
       return res.json({
         success: false,
         message:
-          "You haven’t earned any Twitch rewards yet. Keep watching streams to start earning them!",
+          "You haven’t earned any Twitch rewards yet! Keep watching streams to start earning them.",
       });
     }
 
     const currentDrops = user.drops.filter(Boolean);
 
-    const existing = await TwitchDropsList.find({
+    const existingDrops = await TwitchDropsList.find({
       dropId: { $in: currentDrops },
     }).select("dropId");
 
-    const validDropIds = existing.map((e) => e.dropId);
+    const validDropIds = existingDrops.map((d) => d.dropId);
     const validDrops = currentDrops.filter((id) => validDropIds.includes(id));
 
-    if (validDrops.length === 0) {
+    if (!validDrops.length) {
       return res.json({
         success: false,
         message: "No valid Twitch rewards were found!",
@@ -56,12 +59,15 @@ export const collectTwitchDrops = async (req, res) => {
     return res.json({
       success: true,
       message:
-        "Your Twitch reward has been found and will be delivered to your in-game account within 5 minutes!",
+        "Your Twitch reward has been successfully validated and will be delivered to your in-game account within 5 minutes!",
       currentDrops: validDrops,
     });
-  } catch (err) {
-    console.error("collectTwitchDrops error:", err);
-    res.status(500).json({ message: "Sunucu hatası meydana geldi! " });
+  } catch (error) {
+    console.error(
+      "An error occurred while collecting Twitch drops:",
+      error.message
+    );
+    res.status(500).json({ message: "An internal server error occurred!" });
   }
 };
 
@@ -69,7 +75,10 @@ export const fulfillTwitchDrops = async (req, res) => {
   try {
     const { token, server } = req.query;
 
-    console.log("INCOMING:", req.query);
+    console.log(
+      "A new query has been received with the following parameters:",
+      req.query
+    );
 
     if (!token || token !== process.env.UNITY_API_KEY) {
       return res.status(403).send("odulyok");
@@ -79,7 +88,7 @@ export const fulfillTwitchDrops = async (req, res) => {
       return res.status(400).send("odulyok");
     }
 
-    let serverNormalized = (server || "").trim().toUpperCase();
+    const serverNormalized = server.trim().toUpperCase();
 
     const serverField =
       serverNormalized === "EU"
@@ -94,12 +103,12 @@ export const fulfillTwitchDrops = async (req, res) => {
       return res.send("odulyok");
     }
 
-    const users = await TwitchDropsUsers.find({
+    const users = await TwitchDropsUser.find({
       [serverField]: 1,
       drops: { $exists: true, $ne: [] },
     });
 
-    if (!users || users.length === 0) {
+    if (!users.length) {
       return res.send("odulyok");
     }
 
@@ -117,8 +126,11 @@ export const fulfillTwitchDrops = async (req, res) => {
     }
 
     return res.json(response);
-  } catch (err) {
-    console.error("fulfillTwitchDrops error:", err);
+  } catch (error) {
+    console.error(
+      "An error occurred while fulfilling Twitch drops:",
+      error.message
+    );
     return res.send("odulyok");
   }
 };
