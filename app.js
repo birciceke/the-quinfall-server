@@ -4,7 +4,9 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import session from "express-session";
 import dotenv from "dotenv";
+import { RedisStore } from "connect-redis";
 
+import redisClient from "./data/redis-client.js";
 import connection from "./data/connection.js";
 
 import newsRoutes from "./routes/news.js";
@@ -39,9 +41,11 @@ const limiter = {
 };
 
 const sessionConfig = {
+  store: new RedisStore({ client: redisClient }),
   secret: process.env.SECRET_KEY,
   resave: false,
   saveUninitialized: false,
+  cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 },
 };
 
 connection();
