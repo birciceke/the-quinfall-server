@@ -1,14 +1,31 @@
 import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
+
+const CLIENT_URL = process.env.CLIENT_URL;
+const SERVER_URL = process.env.SERVER_URL;
+const STEAM_API_KEY = process.env.STEAM_API_KEY;
 
 export const redirectToSteam = (req, res) => {
   const steamOpenId = "https://steamcommunity.com/openid/login";
-  const returnUrl = `${process.env.SERVER_URL}/api/steam/return`;
+  const returnUrl = `${SERVER_URL}/api/steam/return`;
+
+  try {
+    const serverUrlObj = new URL(SERVER_URL);
+    var realm = serverUrlObj.origin;
+  } catch (err) {
+    console.error(
+      "SERVER_URL geçersiz bir URL'dir. Realm için SERVER_URL kullanılıyor.",
+      e
+    );
+    var realm = process.env.SERVER_URL;
+  }
 
   const params = new URLSearchParams({
     "openid.ns": "http://specs.openid.net/auth/2.0",
     "openid.mode": "checkid_setup",
     "openid.return_to": returnUrl,
-    "openid.realm": process.env.SERVER_URL,
+    "openid.realm": realm,
     "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
     "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
   });
@@ -18,10 +35,11 @@ export const redirectToSteam = (req, res) => {
 
 export const handleSteamReturn = async (req, res) => {
   try {
+    const query = req.query;
     const verificationData = new URLSearchParams();
 
-    for (const key in req.query) {
-      verificationData.set(key, req.query[key]);
+    for (const key in query) {
+      verificationData.set(key, query[key]);
     }
 
     verificationData.set("openid.mode", "check_authentication");
@@ -34,23 +52,19 @@ export const handleSteamReturn = async (req, res) => {
 
     if (!response.data.includes("is_valid:true")) {
       console.error(
-        "Steam OpenID verification failed! The response did not confirm a valid authentication."
-      );
-      return res.status(400).json({ message: "Invalid Steam authentication!" });
-    }
-
-    const claimedId = req.query["openid.claimed_id"];
-    if (!claimedId) {
-      console.error(
-        "Steam authentication succeeded, but no claimed_id was returned!"
+        "Steam doğrulama hatası. Sunucu yanıtı is_valid:true içermiyor."
       );
       return res
         .status(400)
-        .json({ message: "Steam ID could not be retrieved!" });
+        .json({ message: "Steam kimlik doğrulaması geçersiz!" });
     }
 
+    const claimedId = req.query["openid.claimed_id"];
+    if (!claimedId)
+      return res.status(400).json({ message: "Steam ID alınamadı!" });
+
     const steamId = claimedId.split("/").pop();
-    const apiUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${process.env.STEAM_API_KEY}&steamids=${steamId}`;
+    const apiUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=${STEAM_API_KEY}&steamids=${steamId}`;
 
     const profileRes = await axios.get(apiUrl);
     const player = profileRes.data.response.players[0];
@@ -62,39 +76,39 @@ export const handleSteamReturn = async (req, res) => {
     };
 
     const twitchUser = req.session.twitchUser;
-    const redirectParams = new URLSearchParams({
-      steamId: player.steamid,
-      username: player.personaname,
-      avatar: player.avatarmedium,
-      twitchLinked: Boolean(twitchUser),
-    });
+    const redirectParams = new URLSearchParams();
+
+    redirectParams.set("steamId", player.steamid);
+    redirectParams.set("username", player.personaname);
+    redirectParams.set("avatar", player.avatarmedium);
 
     if (twitchUser) {
+      redirectParams.set("twitchLinked", true);
       redirectParams.set("twitchUsername", twitchUser.display_name);
       redirectParams.set("twitchId", twitchUser.id);
+    } else {
+      redirectParams.set("twitchLinked", false);
     }
 
-    res.redirect(
-      `${process.env.CLIENT_URL}/twitch-drops?${redirectParams.toString()}`
-    );
+    const redirectBase = CLIENT_URL;
+
+    res.redirect(`${redirectBase}/drops?${redirectParams.toString()}`);
   } catch (err) {
     console.error(
-      "An unexpected error occurred during the Steam authentication process: ",
+      "Steam oturum hatası detay:",
       err.response?.data || err.message
     );
-    res.redirect(`${process.env.CLIENT_URL}/twitch-drops`);
+    res.redirect(`${CLIENT_URL}/drops`);
   }
 };
 
 export const handleSteamLogout = (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      console.error(
-        "An error occurred while attempting to terminate the user session: ",
-        err.message
-      );
+      console.error("Oturum yok edilirken hata:", err);
     }
 
-    res.redirect(`${process.env.CLIENT_URL}/twitch-drops`);
+    const redirectBase = CLIENT_URL;
+    res.redirect(`${redirectBase}/drops`);
   });
 };

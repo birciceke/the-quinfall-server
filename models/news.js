@@ -31,17 +31,17 @@ const newsSchema = new Schema(
 const validateNews = (data) => {
   const schema = Joi.object({
     title: Joi.string().required().min(3).max(256).messages({
-      "string.base": "Title must be a valid string!",
-      "string.empty": "Title cannot be empty!",
-      "any.required": "Title is required!",
-      "string.min": "Title must be at least {{#limit}} characters long!",
-      "string.max": "Title must be at most {{#limit}} characters long!",
+      "string.base": "Başlık bir metin olmalıdır!",
+      "string.empty": "Başlık boş bırakılamaz!",
+      "any.required": "Başlık zorunludur!",
+      "string.min": "Başlık en az {{#limit}} karakter olmalıdır!",
+      "string.max": "Başlık en fazla {{#limit}} karakter olabilir!",
     }),
     content: Joi.string().required().min(3).messages({
-      "string.base": "Content must be a valid string!",
-      "string.empty": "Content cannot be empty!",
-      "any.required": "Content is required!",
-      "string.min": "Content must be at least {{#limit}} characters long!",
+      "string.base": "İçerik bir metin olmalıdır!",
+      "string.empty": "İçerik boş bırakılamaz!",
+      "any.required": "İçerik zorunludur!",
+      "string.min": "İçerik en az {{#limit}} karakter olmalıdır!",
     }),
     imageUrl: Joi.string()
       .default(
@@ -49,16 +49,16 @@ const validateNews = (data) => {
       )
       .valid("")
       .messages({
-        "string.base": "Image URL must be a valid string!",
+        "string.base": "Görsel bağlantısı bir metin olmalıdır!",
       }),
     category: Joi.string()
       .required()
       .valid("Update", "Community", "Event", "Other")
       .messages({
-        "string.base": "Category must be a valid string!",
-        "string.empty": "Category cannot be empty!",
-        "any.required": "Category is required!",
-        "any.only": "Category must be a valid value!",
+        "string.base": "Kategori bir metin olmalıdır!",
+        "string.empty": "Kategori boş bırakılamaz!",
+        "any.required": "Kategori zorunludur!",
+        "any.only": "Kategori geçerli bir değer olmalıdır!",
       }),
   });
 

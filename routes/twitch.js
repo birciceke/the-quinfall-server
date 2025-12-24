@@ -4,7 +4,7 @@ import {
   redirectToTwitch,
   handleTwitchCallback,
   handleTwitchLogout,
-} from "../controllers/twitch-auth.js";
+} from "../controllers/twitch.js";
 
 const router = express.Router();
 

@@ -12,10 +12,10 @@ const subscriptionSchema = new Schema({
 const validateSubscription = (data) => {
   const schema = Joi.object({
     email: Joi.string().email().required().messages({
-      "string.base": "Email must be a valid string!",
-      "string.empty": "Email address cannot be empty!",
-      "string.email": "Please provide a valid email address!",
-      "any.required": "Email address is required!",
+      "string.base": "E-posta bir metin olmalıdır!",
+      "string.empty": "E-posta boş bırakılamaz!",
+      "string.email": "Lütfen geçerli bir e-posta giriniz!",
+      "any.required": "E-posta zorunludur!",
     }),
   });
 
