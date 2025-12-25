@@ -41,6 +41,8 @@ const limiter = {
   message: "Too many requests have been made! Please try again later.",
 };
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const sessionConfig = {
   store: new RedisStore({ client: redisClient }),
   secret: process.env.SECRET_KEY,
@@ -48,9 +50,11 @@ const sessionConfig = {
   saveUninitialized: false,
   proxy: true,
   cookie: {
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24,
+    partitioned: isProduction,
   },
 };
 
@@ -78,4 +82,5 @@ app.listen(process.env.PORT, () => {
   console.log(
     `Server started successfully and is listening on port ${process.env.PORT}!`
   );
+  console.log(`Environment: ${process.env.NODE_ENV}`);
 });
