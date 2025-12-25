@@ -74,9 +74,17 @@ export const handleSteamReturn = async (req, res) => {
       redirectParams.set("twitchId", twitchUser.id);
     }
 
-    res.redirect(
-      `${process.env.CLIENT_URL}/twitch-drops?${redirectParams.toString()}`
-    );
+    req.session.save((err) => {
+      if (err) {
+        console.error(
+          "An error occurred while saving Steam session data:",
+          err
+        );
+      }
+      res.redirect(
+        `${process.env.CLIENT_URL}/twitch-drops?${redirectParams.toString()}`
+      );
+    });
   } catch (err) {
     console.error(
       "An unexpected error occurred during the Steam authentication process:",

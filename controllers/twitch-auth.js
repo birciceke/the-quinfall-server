@@ -100,9 +100,17 @@ export const handleTwitchCallback = async (req, res) => {
       redirectParams.set("avatar", steamUser.avatarmedium);
     }
 
-    res.redirect(
-      `${process.env.CLIENT_URL}/twitch-drops?${redirectParams.toString()}`
-    );
+    req.session.save((err) => {
+      if (err) {
+        console.error(
+          "An error occurred while saving Twitch session data:",
+          err
+        );
+      }
+      res.redirect(
+        `${process.env.CLIENT_URL}/twitch-drops?${redirectParams.toString()}`
+      );
+    });
   } catch (error) {
     console.error(
       "An error occurred during the Twitch OAuth callback process:",
